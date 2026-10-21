@@ -1,0 +1,30 @@
+# Build output
+/dist/
+/bin/
+leanport
+
+# Go
+*.test
+*.out
+coverage.txt
+
+# Lean / Lake
+.lake/
+lake-packages/
+*.olean
+*.ilean
+*.trace
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Nix
+result
+result-*
+
+# Local scratch
+/tmp/
+*.local
