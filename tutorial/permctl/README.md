@@ -1,6 +1,6 @@
 # `permctl` — the tutorial application
 
-`permctl` is the worked example for LeanPort: a stdlib-only Go command-line tool
+`permctl` is the worked example for LeanPort: a small Go command-line tool
 whose authorization policy is written and proved in Lean 4, compiled to native
 code, and called through a generated binding.
 
@@ -8,7 +8,9 @@ It demonstrates one claim: *a Go developer can use verified Lean logic without
 writing C glue or learning Lean's native linking.*
 
 The project is checked in complete and is exercised by
-[`../../scripts/e2e.sh`](../../scripts/e2e.sh).
+[`../../scripts/e2e.sh`](../../scripts/e2e.sh). The full, from-scratch
+walkthrough — including every file and every terminal output — is
+[`../README.md`](../README.md).
 
 ## Layout
 
@@ -73,14 +75,15 @@ Theorems proved in `Proofs.lean`:
 leanport check
 leanport build
 go test ./...
-go run ./cmd/permctl verify
-go run ./cmd/permctl matrix
-go run ./cmd/permctl decide --auth --owner --action delete
+go build -ldflags "-X main.version=v1.0.0" -o permctl ./cmd/permctl
+./permctl verify
+./permctl matrix
+./permctl decide --auth --owner --action delete; echo "exit=$?"
 ```
 
-Expected:
+Captured output on Lean 4.29.1, Go 1.24.3, linux/amd64:
 
-```
+```text
 verified 39 checks
 LEVEL            create     read       update     delete     viewAudit
 unauthenticated  deny       deny       deny       deny       deny
@@ -88,6 +91,7 @@ member           allow      deny       deny       deny       deny
 owner            deny       allow      allow      allow      deny
 admin            allow      allow      allow      allow      allow
 allow
+exit=0
 ```
 
 ## Boundary implementation notes
@@ -99,11 +103,11 @@ allow
 - invalid action codes return `0` (fail closed);
 - no `deriving Repr`, no `Nat`, no allocation on the exported path.
 
-The archive is about 27 KB (it includes the compiled proofs) and adds no Lean
-runtime to the Go binary (`ldd` shows only libc). That is a choice for this
-module, not a LeanPort limit: `String` and `ByteArray` exports use runtime-linked
-mode — see [`../../examples/rich-types/`](../../examples/rich-types/). Arrays,
-records and `Option` have validated ABI mappings but no generator yet.
+The archive is about 27 KB (it includes the compiled module and glue) and adds
+no Lean runtime to the Go binary (`ldd` shows only libc). That is a choice for
+this module, not a LeanPort limit: `String` and `ByteArray` exports use
+runtime-linked mode — see [`../../examples/rich-types/`](../../examples/rich-types/).
+Arrays, records and `Option` have validated ABI mappings but no generator yet.
 
 ## Acceptance criteria
 

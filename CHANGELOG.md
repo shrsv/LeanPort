@@ -29,7 +29,7 @@ First working release: the full vertical slice, exercised end to end.
   and demo binary ~14 MB, with no Lean installation or headers needed by
   consumers.
 - `leanport docs` and `leanport doctor`.
-- `tutorial/permctl` — a verified authorization CLI with nine Lean theorems and
+- `tutorial/permctl` — a verified authorization CLI with ten Lean theorems and
   39 Go-side checks.
 - `examples/rich-types` — `String`/`ByteArray` exports and the runtime-linked
   archive.

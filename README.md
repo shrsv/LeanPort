@@ -27,6 +27,116 @@ or the LeanPort CLI to build the application.
 
 ---
 
+## Start here: the tutorial
+
+The fastest way to understand LeanPort is to build **`permctl`**, a small
+command-line tool whose authorization policy is written and proved in Lean 4,
+compiled to native code, and called from Go through a generated binding. The
+full walkthrough starts from an empty directory, shows every file and every
+command, and explains each generated artifact:
+
+➡️ **[Open the full tutorial](tutorial/README.md)**
+
+If LeanPort is not installed, jump to [Install](#install) and come back. Then
+run the checked-in project. `leanport check` and `leanport build` need Lean; the
+rest need only Go and cgo:
+
+```bash
+git clone https://github.com/shrsv/LeanPort
+cd LeanPort/tutorial/permctl
+leanport check
+leanport build
+go test ./...
+go build -o permctl ./cmd/permctl
+./permctl verify
+./permctl matrix
+```
+
+Key output on Lean 4.29.1, Go 1.24.3, linux/amd64 (timings vary):
+
+```text
+✓ checked 1 module(s); 1 export(s) verified
+...
+→ internal/verified/authz/native/linux_amd64/libAuthz.a (none mode, 27.4 KB)
+→ go build ./...
+✓ build complete
+ok  	example.com/permctl/cmd/permctl	0.004s
+verified 39 checks
+LEVEL            create     read       update     delete     viewAudit
+unauthenticated  deny       deny       deny       deny       deny
+member           allow      deny       deny       deny       deny
+owner            deny       allow      allow      allow      deny
+admin            allow      allow      allow      allow      allow
+```
+
+The checked-in project includes the generated archive, so `go test` and
+`go build` need only Go and cgo. `leanport check` and `leanport build` need Lean
+because they run the prover and compile the native code.
+
+Decide individual requests:
+
+```bash
+./permctl decide --auth --owner --action update; echo "exit=$?"
+./permctl decide --auth --owner --action viewAudit; echo "exit=$?"
+```
+
+```text
+allow
+exit=0
+deny
+exit=1
+```
+
+That is the whole loop: **Lean owns the rules and proofs; `leanport build`
+produces a native archive and Go API; `go build` stays an ordinary Go build.**
+The tutorial also shows how to start from scratch, how to make a broken proof
+fail CI, and how to inspect the generated package.
+
+A second, smaller example shows `String` and `ByteArray` crossing the boundary:
+[`examples/rich-types/`](examples/rich-types/).
+
+---
+
+## Install
+
+**Prebuilt binaries** (linux/darwin/windows × amd64/arm64) are attached to each
+release together with `checksums.txt`:
+
+```bash
+VERSION=v0.1.0
+curl -fsSL -o leanport \
+  "https://github.com/shrsv/LeanPort/releases/download/${VERSION}/leanport_${VERSION}_linux_amd64"
+chmod +x leanport
+sudo install -m755 leanport /usr/local/bin/leanport
+```
+
+Choose `darwin_arm64`, `windows_amd64.exe`, and so on for your platform.
+
+**With Go:**
+
+```bash
+go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.0
+```
+
+**From source:**
+
+```bash
+git clone https://github.com/shrsv/LeanPort
+cd LeanPort
+go build ./cmd/leanport
+./leanport version
+```
+
+> A binary installed with `go install` or built with `go build` from source
+> prints `leanport dev`; the release script injects the version. That is
+> expected.
+
+Requirements: Go 1.24+, a C compiler (`gcc` or `clang`), and — only for
+maintainers changing Lean code — Lean 4 via [elan](https://github.com/leanprover/elan).
+`leanport doctor` reports what is present and what is missing.
+
+---
+
 ## Motivation
 
 Formal verification is valuable exactly where Go code is hardest to test: pure
@@ -76,9 +186,10 @@ single source of truth; generated files are never a second implementation.
 Commands, in order:
 
 ```bash
-leanport init                     # pin toolchains, set up lean/ and conventions
-leanport new Authz                # scaffold a module: spec, proofs, boundary, binding
-# ... edit lean/LeanPort/Authz/*.lean ...
+leanport init --env local --ci none --name myapp --targets linux/amd64
+leanport new --package authz --go-name Authorize \
+  --export leanport_authz_authorize Authz
+# ... edit lean/LeanPort/Authz/*.lean and the [[binding]] in leanport.toml ...
 leanport check                    # run Lean's elaborator; fail on unproved holes
 leanport build                    # compile Lean -> C -> static archive + Go binding
 go build ./...                    # or: go run ./cmd/app
@@ -136,66 +247,6 @@ result   = "bool"
 runtime  = "auto"
 actions  = { Create = 0, Read = 1, Update = 2, Delete = 3, ViewAudit = 4 }
 ```
-
----
-
-## Quickstart
-
-Build a working verified CLI end to end:
-
-➡️ **[`tutorial/`](tutorial/README.md)** — a step-by-step walkthrough of
-`permctl`, a small command-line tool whose authorization policy is written and
-proved in Lean 4, compiled to native code, and called from Go through the
-generated binding.
-
-The finished project is checked in at [`tutorial/permctl/`](tutorial/permctl/):
-
-```bash
-cd tutorial/permctl
-leanport check
-leanport build
-go test ./...
-go run ./cmd/permctl verify
-```
-
-A second, smaller example shows `String` and `ByteArray` crossing the boundary:
-[`examples/rich-types/`](examples/rich-types/).
-
----
-
-## Install
-
-**Prebuilt binaries** (linux/darwin/windows × amd64/arm64) are attached to each
-release together with `checksums.txt`:
-
-```bash
-VERSION=v0.1.0
-curl -fsSL -o leanport \
-  "https://github.com/shrsv/LeanPort/releases/download/${VERSION}/leanport_${VERSION}_linux_amd64"
-chmod +x leanport
-sudo install -m755 leanport /usr/local/bin/leanport
-```
-
-Choose `darwin_arm64`, `windows_amd64.exe`, and so on for your platform.
-
-**With Go:**
-
-```bash
-go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.0
-```
-
-**From source:**
-
-```bash
-git clone https://github.com/shrsv/LeanPort
-cd LeanPort
-go build ./cmd/leanport
-./leanport version
-```
-
-Requirements: Go 1.24+, a C compiler (`gcc` or `clang`), and — only for
-maintainers changing Lean code — Lean 4 via [elan](https://github.com/leanprover/elan).
-`leanport doctor` reports what is present and what is missing.
 
 ---
 
