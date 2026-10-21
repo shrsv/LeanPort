@@ -27,10 +27,10 @@ wrong, the fix belongs in the Lean source or in `leanport.toml`, followed by
 │       ├── Boundary.lean             # runtime-free scalar boundary + @[export]
 │       └── SPEC.md                   # generated summary of what is guaranteed
 └── internal/verified/<pkg>/          # GENERATED — do not edit
-    ├── <pkg>.go                      # public Go API
-    ├── <pkg>_cgo.go                  # cgo layer
-    ├── bridge.h, bridge.c            # C ABI + runtime stubs
-    ├── native/<goos>_<goarch>/*.a    # native archive
+    ├── <pkg>.go                      # public Go API: types and constants
+    ├── <pkg>_cgo.go                  # cgo layer and Go wrappers
+    ├── artifact.go                   # archive digest
+    ├── native/<goos>_<goarch>/*.a    # native archive (+ Lean runtime if linked)
     └── MANIFEST.json                 # toolchain + export + artifact digests
 ```
 
@@ -40,7 +40,7 @@ wrong, the fix belongs in the Lean source or in `leanport.toml`, followed by
 leanport check     # type-check proofs; fails on 'sorry'/'admit' and missing exports
 leanport build     # generate + compile + archive + generate Go; runs check first
 go test ./...      # verify the Go wiring
-leanport docs      # refresh SPEC.md and this file's generated block
+leanport docs      # refresh each module's SPEC.md
 ```
 
 ## Where a change belongs
@@ -59,13 +59,17 @@ leanport docs      # refresh SPEC.md and this file's generated block
 There are two boundary modes; `leanport build` chooses automatically.
 
 **Runtime-free** (scalar-only): only `Bool`, `UInt8/16/32/64`, `Int8/16/32/64`,
-`USize`, `Float`/`Float32`, `Char`, and sealed records of those. No `Option`,
-`Nat`, strings, arrays, `Repr`, or IO on the exported path. Invalid input returns
-the deny code, never panics or allocates.
+`USize`, `Float`/`Float32`, `Char`, and action codes. No `Option`, `Nat`,
+strings, arrays, `Repr`, or IO on the exported path. Invalid input returns the
+deny code, never panics or allocates.
 
-**Runtime-linked** (anything boxed): `String`, `ByteArray`, arrays, `Option`,
-`Except`, records and user inductives are allowed. Ownership and copying are
-handled by generated glue; do not hand-write conversions.
+**Runtime-linked** (`String` and `ByteArray` in v0.1.0): values are copied in
+and out and ownership is handled by generated glue. Do not hand-write
+conversions. Arrays, records, `Option` and `Except` have validated ABI mappings
+but no generator yet; using them in `leanport.toml` fails the build.
+
+The generated glue adds no locking. If Go may call a linked binding from
+multiple goroutines, serialize the calls.
 
 If `leanport build` reports an unexpected runtime symbol in a module you intended
 to keep runtime-free, simplify `Boundary.lean` or set `runtime = "linked"` in the
@@ -77,8 +81,8 @@ binding. Do not add flags to suppress the check.
   line. Close the proof; do not delete the theorem.
 - **`export X not found in generated C`** — the `@[export X]` declaration is
   missing, misspelled, or the module did not build.
-- **`runtime symbol required: <names>`** — the boundary is not scalar-only. See
-  `docs/limitations.md`.
+- **`result type <T> is not supported by the generator yet`** — the token is
+  recognised but v0.1.0 cannot generate it. See `docs/limitations.md`.
 - **Lean elaboration error** — the theorem or definition does not type-check.
   Fix the Lean source.
 
@@ -88,7 +92,8 @@ binding. Do not add flags to suppress the check.
    the module's `SPEC.md`.
 2. Never add `sorry` to reach a green build.
 3. Never hand-edit generated files, and never commit a `leanport build` output
-   without running `leanport check` in the same commit.
+   without running `leanport check` in the same commit. Generated archives are
+   normally committed for runtime-free modules and gitignored for linked ones.
 4. When the policy changes, add or update a Go test that exercises the changed
    decision, in addition to the Lean proof.
 5. Report the exact commands you ran and their results.

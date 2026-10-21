@@ -11,10 +11,10 @@ lean/                             leanport build                        generate
 LeanPort/Authz/Policy.lean        lake build                            internal/verified/authz/
 LeanPort/Authz/Proofs.lean   ──►  .lake/build/ir/**/Policy.c       ──►  authz.go          (public Go API)
 LeanPort/Authz/Boundary.lean      cc -c        ──► Policy.o             authz_cgo.go      (cgo layer)
-                                  nm -u check  ──► stub policy         bridge.h          (C ABI)
-@[export leanport_authz_…]        ar rcs       ──► libAuthz.a         bridge.c          (stubs + init)
-                                                           │           native/linux_amd64/libAuthz.a
-                                                           │           MANIFEST.json
+                                  nm -u check  ──► mode choice          artifact.go       (archive digest)
+@[export leanport_authz_…]        glue (C)     ──► glue.o              native/linux_amd64/libAuthz.a
+                                  ar/ld -r     ──► libAuthz.a           MANIFEST.json
+                                                           │
                                                            ▼
                                                     go build ./...  links the archive
 ```
@@ -74,6 +74,8 @@ And for boxed data:
 - `String`, `ByteArray`, `Array`, records and `Option` exports all compile to
   `lean_object*` signatures and reference real runtime functions (for example
   `lean_string_append`, `lean_mk_string`, `lean_alloc_sarray`, `mi_malloc_small`).
+  The v0.1.0 generator emits wrappers for `String` and `ByteArray` only; the
+  other mappings are ABI-validated but planned.
 - The Lean toolchain ships static `libgmp.a`, `libuv.a`, `libc++.a` and
   `libc++abi.a`, so a fully static runtime link needs no system `-dev` packages.
 - Merging the module objects and the pulled runtime members with
@@ -84,7 +86,8 @@ And for boxed data:
   `ldd` shows only libc/libm/libgcc.
 - The `lean.h`-dependent glue is compiled at `leanport build` time and placed in
   the archive, so the consumer's Go package contains only plain C prototypes and
-  the consumer never needs Lean headers.
+  the consumer never needs Lean headers. The glue source lives in
+  `.leanport/build/`; it is an intermediate, not a generated source file.
 
 ## Boundary modes
 
@@ -101,20 +104,21 @@ runtime:
 - avoid `Nat` conversions, strings, arrays, `Repr` and IO on the exported path;
 - make the boundary total: invalid input returns the deny code, never panics.
 
-Five dead-path symbols (`initialize_Init`, `lean_inc_heartbeat`,
-`mi_malloc_small`, `lean_dec_ref_cold`, `lean_internal_panic_out_of_memory`) are
-satisfied by generated fail-closed stubs in `bridge.c`. They are reachable only
-from the module initializer and allocation paths, which scalar exports never
-invoke. (`lean_notify_assert` also appears when the Lean headers' inline
-`assert()` macro is used; it fires only on a violated precondition.)
+The dead-path symbols (`initialize_Init`, `lean_inc_heartbeat`,
+`mi_malloc_small`, `lean_dec_ref_cold`, `lean_internal_panic_out_of_memory`, and
+`lean_notify_assert` when the headers' inline `assert()` macro is used) are
+satisfied by fail-closed stubs in the generated glue object. They are reachable
+only from the module initializer and allocation paths, which scalar exports
+never invoke. The stubs abort on the panic/assert paths.
 
-Archive size: approximately 4 KB. No Lean runtime in the consumer's binary.
+Archive size: approximately 12–28 KB (proofs are compiled into the archive). No
+Lean runtime in the consumer's binary; the tutorial binary is about 2.3 MB.
 
 ### Runtime-linked mode
 
-Chosen automatically when an export uses anything boxed — `String`,
-`ByteArray`, arrays, records, `Option`, user inductives. The boundary can be
-written naturally; LeanPort handles ownership:
+Chosen automatically when an export uses `String` or `ByteArray`, or when a live
+Lean runtime symbol remains after linking the project's own objects. The
+boundary can be written naturally; LeanPort handles ownership:
 
 - the generated glue owns the conversion and calls `lean_dec` on values it
   borrows;
@@ -125,23 +129,25 @@ written naturally; LeanPort handles ownership:
   `lean_io_mark_end_initialization`).
 
 LeanPort merges the module objects with the runtime members actually referenced
-and with `libc++`/GMP/libuv, all statically. Archive size: approximately 30 MB.
+and with `libc++`/GMP/libuv, all statically. Archive size: approximately 29 MB.
 The consumer needs no Lean headers and no Lean installation, and `ldd` on the
-resulting binary shows only libc/libm/libgcc.
+resulting binary shows only libc/libm/libgcc. The glue initializes the runtime
+once, lazily, and does not add locking: serialize concurrent calls.
 
 ### Choosing
 
 | | runtime-free | runtime-linked |
 |---|---|---|
-| Supported types | scalars, sealed records of scalars | everything Lean can compile |
-| Archive | ~4 KB | ~30 MB |
+| Supported by the generator | scalars, action enums | scalars, `String`, `ByteArray` |
+| Archive | ~12–28 KB | ~29 MB |
 | Go binary delta | ~0 | ~+12 MB |
 | Consumer needs Lean | no | no |
 | Preferred for | decision logic, policies, arithmetic | text, buffers, rich results |
 
 Because decision logic rarely needs allocation, most verified modules will use
-runtime-free mode. Rich types are available when the domain needs them, at a
-size cost recorded in `MANIFEST.json`.
+runtime-free mode. Strings and byte arrays are available when the domain needs
+them, at a size cost recorded in `MANIFEST.json`. Arrays, records and `Option`
+are the next generator additions; they are not silently accepted today.
 
 ## Generated artifacts
 
@@ -149,15 +155,15 @@ For a module `authz` targeting `linux/amd64`:
 
 ```
 internal/verified/authz/
-├── authz.go                                  # public Go API (hand-worthy, generated)
-├── authz_cgo.go                              # cgo directives + nativeAuthorize
-├── bridge.h                                  # extern declaration of the export
-├── bridge.c                                  # runtime stubs
-├── native/linux_amd64/libAuthz.a             # Lean implementation + runtime-free object
-├── MANIFEST.json                             # lean toolchain, export table, checksums
-├── SPEC.md                                   # generated specification summary
-└── AGENTS.md                                 # generated agent notes for this module
+├── authz.go                                  # public Go API: types and constants
+├── authz_cgo.go                              # cgo directives, prototypes, Go wrappers
+├── artifact.go                               # archive digest (forces Go cache invalidation)
+├── native/linux_amd64/libAuthz.a             # Lean objects + glue (+ runtime if linked)
+└── MANIFEST.json                             # toolchain, export table, artifact digests
 ```
+
+The module's specification is `lean/LeanPort/Authz/SPEC.md`, written by
+`leanport docs` next to the source it describes.
 
 Everything under `internal/verified/` is generated. Maintainers edit `lean/`.
 A header comment in every generated file states this, and CI can verify the
@@ -168,15 +174,16 @@ working tree is clean after running `leanport build`.
 ```json
 {
   "schema": 1,
-  "generator": "leanport 0.1.0",
-  "lean": { "toolchain": "leanprover/lean4:v4.29.1", "compiler": "4.29.1" },
+  "generator": "leanport v0.1.0",
+  "lean": { "toolchain": "4.29.1" },
   "target": { "goos": "linux", "goarch": "amd64" },
+  "mode": "none",
   "exports": [
     { "c_symbol": "leanport_authz_authorize", "go": "Authorize",
       "args": ["bool", "bool", "bool", "action:Action"], "result": "bool" }
   ],
   "artifacts": [
-    { "path": "native/linux_amd64/libAuthz.a", "sha256": "…" }
+    { "path": "internal/verified/authz/native/linux_amd64/libAuthz.a", "sha256": "…" }
   ]
 }
 ```
@@ -187,8 +194,9 @@ toolchain change alters the digest of every archive.
 ## Why Nix
 
 Lean, Go and a C toolchain must agree on versions for the artifacts to be
-reproducible. Nix pins all three plus the generated archive inputs. Nix pins the
-*build environment*; Go modules continue to pin Go dependencies and Lake
-manifests pin Lean packages. These layers are complementary.
+reproducible. The flake pins Go and the C toolchain; `lean/lean-toolchain` pins
+Lean via elan. Go modules pin Go dependencies and Lake manifests pin Lean
+packages. These layers are complementary, and `leanport doctor` reports the
+versions that are actually active.
 
 Nix is never required to consume a binding.

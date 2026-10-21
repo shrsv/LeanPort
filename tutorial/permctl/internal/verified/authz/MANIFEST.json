@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "generator": "leanport dev",
+  "lean": {
+    "toolchain": "4.29.1"
+  },
+  "target": {
+    "goos": "linux",
+    "goarch": "amd64"
+  },
+  "mode": "none",
+  "exports": [
+    {
+      "c_symbol": "leanport_authz_authorize",
+      "go": "Authorize",
+      "args": [
+        "bool",
+        "bool",
+        "bool",
+        "action:Action"
+      ],
+      "result": "bool"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "internal/verified/authz/native/linux_amd64/libAuthz.a",
+      "sha256": "d799afee15465e97b8a184403c106de2a19f36ee1ef288d919b2617401131585"
+    }
+  ]
+}

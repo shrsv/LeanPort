@@ -8,22 +8,28 @@ leanport
 *.out
 coverage.txt
 
-# Lean / Lake
+# Lean / Lake / LeanPort
 .lake/
 lake-packages/
 *.olean
 *.ilean
 *.trace
+.leanport/
+
+# Runtime-linked example archives are ~29 MB; rebuild them with `leanport build`.
+examples/rich-types/internal/verified/*/native/
+
+# Nix / direnv
+result
+result-*
+.direnv/
+.elan/
 
 # Editors and OS
 .DS_Store
 .idea/
 .vscode/
 *.swp
-
-# Nix
-result
-result-*
 
 # Local scratch
 /tmp/

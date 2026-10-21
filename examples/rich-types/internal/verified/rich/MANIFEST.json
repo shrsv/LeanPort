@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "generator": "leanport dev",
+  "lean": {
+    "toolchain": "4.29.1"
+  },
+  "target": {
+    "goos": "linux",
+    "goarch": "amd64"
+  },
+  "mode": "linked",
+  "exports": [
+    {
+      "c_symbol": "leanport_rich_greet",
+      "go": "Greet",
+      "args": [
+        "string"
+      ],
+      "result": "string"
+    },
+    {
+      "c_symbol": "leanport_rich_sum",
+      "go": "Sum",
+      "args": [
+        "bytes"
+      ],
+      "result": "uint64"
+    },
+    {
+      "c_symbol": "leanport_rich_reverse",
+      "go": "Reverse",
+      "args": [
+        "bytes"
+      ],
+      "result": "bytes"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "internal/verified/rich/native/linux_amd64/libRich.a",
+      "sha256": "8f7bfe3363de0814a50cd9401167ed222ec2fd6207b18a346c2cffc1732d2cde"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+# LeanPort project contract. See docs/cli-reference.md.
+# Files under internal/verified/ are generated; edit lean/ instead.
+
+schema = 1
+
+[project]
+  name = "permctl"
+  lean_dir = "lean"
+  go_module = "example.com/permctl"
+  package_dir = "internal/verified"
+  targets = ["linux/amd64"]
+
+[lean]
+  toolchain = "4.29.1"
+
+[[binding]]
+  package = "authz"
+  module = "Authz"
+  export = "leanport_authz_authorize"
+  go_name = "Authorize"
+  args = ["bool", "bool", "bool", "action:Action"]
+  result = "bool"
+  runtime = "auto"
+  actions = { Create = 0, Read = 1, Update = 2, Delete = 3, ViewAudit = 4 }

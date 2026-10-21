@@ -1,0 +1,41 @@
+# LeanPort project contract. See docs/cli-reference.md.
+# Files under internal/verified/ are generated; edit lean/ instead.
+
+schema = 1
+
+[project]
+  name = "rich-types"
+  lean_dir = "lean"
+  go_module = "example.com/richtypes"
+  package_dir = "internal/verified"
+  targets = ["linux/amd64"]
+
+[lean]
+  toolchain = "4.29.1"
+
+[[binding]]
+  package = "rich"
+  module = "Rich"
+  export = "leanport_rich_greet"
+  go_name = "Greet"
+  args = ["string"]
+  result = "string"
+  runtime = "auto"
+
+[[binding]]
+  package = "rich"
+  module = "Rich"
+  export = "leanport_rich_sum"
+  go_name = "Sum"
+  args = ["bytes"]
+  result = "uint64"
+  runtime = "auto"
+
+[[binding]]
+  package = "rich"
+  module = "Rich"
+  export = "leanport_rich_reverse"
+  go_name = "Reverse"
+  args = ["bytes"]
+  result = "bytes"
+  runtime = "auto"

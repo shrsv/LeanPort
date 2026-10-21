@@ -1,0 +1,8 @@
+name = "permctl"
+
+# One lean_lib is appended per module by `leanport new`.
+
+[[lean_lib]]
+name = "LeanPort.Authz"
+srcDir = "."
+globs = ["LeanPort.Authz.*"]

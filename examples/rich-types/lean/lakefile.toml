@@ -1,0 +1,8 @@
+name = "rich-types"
+
+# One lean_lib is appended per module by `leanport new`.
+
+[[lean_lib]]
+name = "LeanPort.Rich"
+srcDir = "."
+globs = ["LeanPort.Rich.*"]
