@@ -1,7 +1,7 @@
 # Build output
 /dist/
 /bin/
-leanport
+/leanport
 
 # Go
 *.test

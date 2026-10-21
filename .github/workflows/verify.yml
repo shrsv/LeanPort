@@ -11,7 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Proofs, bindings, Go tests
         run: nix develop -c ./scripts/e2e.sh
 
