@@ -72,6 +72,32 @@ cp "$WORK/Proofs.lean.bak" "$proof"
 "$LP" check >/dev/null
 echo "   rejected as expected"
 
+say "multiple modules: add a second module and link both"
+cp -a "$ROOT/tutorial/permctl" "$WORK/multi"
+cd "$WORK/multi"
+"$LP" new --package quota --go-name AllowQuota --export leanport_quota_allow Quota >/dev/null
+"$LP" check
+"$LP" build
+mkdir -p cmd/quotademo
+cat > cmd/quotademo/main.go <<'EOF'
+package main
+
+import (
+	"fmt"
+
+	"example.com/permctl/internal/verified/authz"
+	"example.com/permctl/internal/verified/quota"
+)
+
+func main() {
+	fmt.Println(authz.Authorize(true, false, true, authz.Update))
+	fmt.Println(quota.AllowQuota(true, 7))
+	fmt.Println(quota.AllowQuota(false, 7))
+}
+EOF
+out="$(go run ./cmd/quotademo)"
+[ "$out" = $'true\ntrue\nfalse' ] || fail "two-module program returned: $out"
+
 say "rich types: strings and byte arrays through the runtime-linked archive"
 cd "$ROOT/examples/rich-types"
 "$LP" check

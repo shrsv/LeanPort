@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the six release binaries, checksums, and publish with gh.
-# Usage: scripts/release.sh v0.1.0        (DRY_RUN=1 to stop before gh)
+# Usage: scripts/release.sh vX.Y.Z        (DRY_RUN=1 to stop before gh)
 set -euo pipefail
 
 VERSION="${1:-}"

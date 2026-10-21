@@ -63,7 +63,7 @@ There are two boundary modes; `leanport build` chooses automatically.
 strings, arrays, `Repr`, or IO on the exported path. Invalid input returns the
 deny code, never panics or allocates.
 
-**Runtime-linked** (`String` and `ByteArray` in v0.1.0): values are copied in
+**Runtime-linked** (`String` and `ByteArray` in v0.1.1): values are copied in
 and out and ownership is handled by generated glue. Do not hand-write
 conversions. Arrays, records, `Option` and `Except` have validated ABI mappings
 but no generator yet; using them in `leanport.toml` fails the build.
@@ -82,7 +82,7 @@ binding. Do not add flags to suppress the check.
 - **`export X not found in generated C`** — the `@[export X]` declaration is
   missing, misspelled, or the module did not build.
 - **`result type <T> is not supported by the generator yet`** — the token is
-  recognised but v0.1.0 cannot generate it. See `docs/limitations.md`.
+  recognised but v0.1.1 cannot generate it. See `docs/limitations.md`.
 - **Lean elaboration error** — the theorem or definition does not type-check.
   Fix the Lean source.
 

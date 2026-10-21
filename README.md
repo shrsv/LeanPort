@@ -18,7 +18,7 @@ allowed := authz.Authorize(authenticated, isAdmin, ownsResource, authz.Create)
 Consumers need Go, cgo and a C toolchain. They do **not** need Lean, Lake, elan
 or the LeanPort CLI to build the application.
 
-> **Status: v0.1.0.** The pipeline is implemented and exercised end to end by
+> **Status: v0.1.1.** The pipeline is implemented and exercised end to end by
 > [`scripts/e2e.sh`](scripts/e2e.sh): fresh scaffold, proof checking, runtime-free
 > and runtime-linked archives, Go tests, and a deliberate `sorry` failure. The
 > generator supports scalars, strings and byte arrays. Records, arrays,
@@ -103,7 +103,7 @@ A second, smaller example shows `String` and `ByteArray` crossing the boundary:
 release together with `checksums.txt`:
 
 ```bash
-VERSION=v0.1.0
+VERSION=v0.1.1
 curl -fsSL -o leanport \
   "https://github.com/shrsv/LeanPort/releases/download/${VERSION}/leanport_${VERSION}_linux_amd64"
 chmod +x leanport
@@ -115,7 +115,7 @@ Choose `darwin_arm64`, `windows_amd64.exe`, and so on for your platform.
 **With Go:**
 
 ```bash
-go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.0
+go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.1
 ```
 
 **From source:**
@@ -250,6 +250,73 @@ actions  = { Create = 0, Read = 1, Update = 2, Delete = 3, ViewAudit = 4 }
 
 ---
 
+## Adding another module
+
+`authz` is just the first module. Adding another one is a command, not a
+convention: `leanport new` writes the Lean scaffold, appends the Lake library,
+and appends the binding. Run it from the project root:
+
+```bash
+leanport new --package quota --go-name AllowQuota \
+  --export leanport_quota_allow Quota
+```
+
+```text
+created lean/LeanPort/Quota/{Policy,Proofs,Boundary}.lean
+added binding quota.AllowQuota -> leanport_quota_allow
+
+Edit the Lean files, then: leanport check && leanport build
+```
+
+The generated scaffold is already total. Its default binding has
+`args = ["bool", "uint8"]` and `result = "bool"`, so the generated Go API is:
+
+```go
+func AllowQuota(enabled bool, code uint8) bool
+```
+
+Replace the scaffold's `decide` and theorems with your own rules, and adjust
+`args`/`result` in the new `[[binding]]` if needed. `--package` is the generated
+Go package directory, `--go-name` is the Go function, `--export` must match the
+`@[export]` name in `Boundary.lean`, and the last argument (`Quota`) is the Lean
+module.
+
+Then run both commands:
+
+```bash
+leanport check
+leanport build
+```
+
+`check` verifies every binding in the project. `build` regenerates **all**
+bindings, not just the new one, and writes `internal/verified/quota/` beside
+`internal/verified/authz/`. Import the new package from ordinary Go code:
+
+```go
+import (
+	"example.com/permctl/internal/verified/authz"
+	"example.com/permctl/internal/verified/quota"
+)
+
+fmt.Println(authz.Authorize(true, false, true, authz.Update))
+fmt.Println(quota.AllowQuota(true, 7))
+```
+
+There is no watcher and no automatic update. Editing Lean and running
+`go build` does nothing: `go build` only compiles the already-generated package.
+After any change to `lean/` or `leanport.toml`, rerun
+`leanport check && leanport build`. Run `leanport docs` if you also want the
+generated `SPEC.md` refreshed. Commit the Lean sources, `leanport.toml`, and the
+regenerated `internal/verified/` tree.
+
+Multiple runtime-free modules can be linked into one binary. Runtime-linked
+packages (`String`/`ByteArray`) embed Lean's runtime in each archive, so keep
+those exports in one package; multiple runtime-linked packages are not
+supported in v0.1.1. Adding a module by hand is possible, but you must edit both
+`lean/lakefile.toml` and `leanport.toml`; `leanport new` is the supported path.
+
+---
+
 ## Usage
 
 ```
@@ -374,7 +441,11 @@ State clearly, up front:
 - **cgo is required.** A C compiler and compatible native libraries must exist
   at application build time. `CGO_ENABLED=0` pure-Go builds cannot link a
   generated binding.
-- **v0.1.0 builds the host target.** Cross-compilation needs a target C
+- **Multiple modules are supported, with one runtime-linked package limitation.**
+  Runtime-free modules can be imported together. Each runtime-linked package
+  embeds Lean's runtime, so keep `String`/`ByteArray` exports in one package in
+  v0.1.1.
+- **v0.1.1 builds the host target.** Cross-compilation needs a target C
   toolchain; archives are per-target.
 - **Linked glue does not add locking.** Serialize calls if Go calls a
   runtime-linked binding from multiple goroutines.

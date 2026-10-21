@@ -33,6 +33,13 @@ generality. The acceptance criterion for v0.1 is narrow and testable:
       `lean-toolchain` and fetched by elan; CI validates it.
 - [x] Binary releases for linux/darwin/windows × amd64/arm64 with checksums.
 
+## v0.1.1 — multi-module linking fix (released 2026-10-21)
+
+- [x] Link multiple runtime-free generated packages into one Go binary:
+      generated runtime stubs are weak, so they no longer collide.
+- [x] Document adding a second module and calling it from Go.
+- [x] Add a two-module build and import check to `scripts/e2e.sh`.
+
 ## v0.2 — richer generated boundary
 
 The ABI and bridge for these were validated while building v0.1; the generator
@@ -48,7 +55,8 @@ does not emit them yet.
 - [ ] `leanport watch` for a fast proof-check loop.
 - [ ] Richer diagnostics: map Lean elaboration errors to source ranges with
       suggested fixes.
-- [ ] Multi-module projects and shared Lean packages via Lake dependencies.
+- [ ] Shared Lean packages via Lake dependencies. Multiple runtime-free modules
+      are already supported; shared packages are not.
 
 ## v0.3 — ergonomics at scale
 
@@ -75,6 +83,6 @@ does not emit them yet.
 - **`flake.lock`** requires network access to a Nix binary cache. It is
   intentionally not committed in v0.1; the first `nix develop` or CI run creates
   it. Commit it to pin nixpkgs for reproducible environments.
-- **Cross-compilation** is limited to the host target in v0.1.0. Archives are
+- **Cross-compilation** is limited to the host target in v0.1.1. Archives are
   per-target, and the config already records intended targets; a target C
   toolchain is required before `leanport build --target` can do the work.

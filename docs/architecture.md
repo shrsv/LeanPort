@@ -74,7 +74,7 @@ And for boxed data:
 - `String`, `ByteArray`, `Array`, records and `Option` exports all compile to
   `lean_object*` signatures and reference real runtime functions (for example
   `lean_string_append`, `lean_mk_string`, `lean_alloc_sarray`, `mi_malloc_small`).
-  The v0.1.0 generator emits wrappers for `String` and `ByteArray` only; the
+  The v0.1.1 generator emits wrappers for `String` and `ByteArray` only; the
   other mappings are ABI-validated but planned.
 - The Lean toolchain ships static `libgmp.a`, `libuv.a`, `libc++.a` and
   `libc++abi.a`, so a fully static runtime link needs no system `-dev` packages.
@@ -174,7 +174,7 @@ working tree is clean after running `leanport build`.
 ```json
 {
   "schema": 1,
-  "generator": "leanport v0.1.0",
+  "generator": "leanport v0.1.1",
   "lean": { "toolchain": "4.29.1" },
   "target": { "goos": "linux", "goarch": "amd64" },
   "mode": "none",

@@ -104,13 +104,21 @@ func glueFor(b Binding, mode string, initSyms []string) (string, error) {
 		s.WriteString(`
 /* Fail-closed stubs for the runtime entry points that appear only in the
    generated module initializer's dead code path. Scalar exports never call
-   them; aborting on the panic/assert paths is intentional. */
-void initialize_Init(uint8_t b) { (void)b; }
-void lean_inc_heartbeat(void) {}
-void* mi_malloc_small(size_t n) { (void)n; return 0; }
-void lean_dec_ref_cold(void* o) { (void)o; }
-void lean_internal_panic_out_of_memory(void) { abort(); }
-void lean_notify_assert(const char* f, int l, const char* c) { (void)f; (void)l; (void)c; abort(); }
+   them; aborting on the panic/assert paths is intentional.
+
+   They are weak so several runtime-free archives can be linked into one Go
+   binary. The linker keeps one definition instead of reporting duplicates. */
+#if defined(__GNUC__) || defined(__clang__)
+#define LP_WEAK __attribute__((weak))
+#else
+#define LP_WEAK
+#endif
+LP_WEAK void initialize_Init(uint8_t b) { (void)b; }
+LP_WEAK void lean_inc_heartbeat(void) {}
+LP_WEAK void* mi_malloc_small(size_t n) { (void)n; return 0; }
+LP_WEAK void lean_dec_ref_cold(void* o) { (void)o; }
+LP_WEAK void lean_internal_panic_out_of_memory(void) { abort(); }
+LP_WEAK void lean_notify_assert(const char* f, int l, const char* c) { (void)f; (void)l; (void)c; abort(); }
 `)
 	}
 	return s.String(), nil

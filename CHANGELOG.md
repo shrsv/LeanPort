@@ -5,6 +5,29 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-10-21
+
+Multi-module linking fix.
+
+### Fixed
+
+- Runtime-free archives now emit weak Lean runtime stubs. Importing several
+  scalar modules into one Go binary no longer fails with duplicate
+  `initialize_Init` and related symbols. Multiple bindings in one package are
+  covered too.
+
+### Added
+
+- README and tutorial sections explaining how to add a module after `authz`,
+  which commands are required, and how to import the generated package from Go.
+- A two-module build and import check in `scripts/e2e.sh`.
+
+### Known limits
+
+- Multiple runtime-linked packages (`String`/`ByteArray`) are not supported.
+  Each runtime-linked package embeds the Lean runtime, so keep those exports in
+  one package.
+
 ## [0.1.0] - 2026-10-21
 
 First working release: the full vertical slice, exercised end to end.

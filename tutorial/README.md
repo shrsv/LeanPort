@@ -86,7 +86,7 @@ go env CGO_ENABLED
 Install LeanPort from a release:
 
 ```bash
-VERSION=v0.1.0
+VERSION=v0.1.1
 curl -fsSL -o leanport \
   "https://github.com/shrsv/LeanPort/releases/download/${VERSION}/leanport_${VERSION}_linux_amd64"
 chmod +x leanport
@@ -97,7 +97,7 @@ Choose `darwin_arm64`, `windows_amd64.exe`, and so on for your platform. With
 Go:
 
 ```bash
-go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.0
+go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.1
 ```
 
 `go install` writes to `$(go env GOPATH)/bin`; make sure that directory is on
@@ -119,7 +119,7 @@ leanport version
 ```
 
 ```text
-leanport v0.1.0 (commit 50e2683, built 2026-10-21T11:00:37Z)
+leanport v0.1.1
 ```
 
 A binary installed with `go install` or built with `go build` from source prints
@@ -200,7 +200,7 @@ Next:
 
 The first line prints an absolute path; yours will match the directory you
 created. On macOS or Windows, choose your host target instead, for example
-`--targets darwin/arm64` or `--targets windows/amd64`. v0.1.0 builds the host
+`--targets darwin/arm64` or `--targets windows/amd64`. v0.1.1 builds the host
 target; cross-compilation needs a target C toolchain.
 
 `init` created:
@@ -1063,6 +1063,142 @@ LeanPort doctor
 `nix MISSING` is fine if you are not using the flake. The important fields are
 the Go, C and Lean paths, `CGO_ENABLED`, the pinned toolchain, and the project's
 bindings.
+
+## Step 17 — add a second module and call it from Go
+
+`authz` is not special, and you do not edit generated files by hand. Add a
+second verified module with `leanport new`:
+
+```bash
+leanport new --package quota --go-name AllowQuota \
+  --export leanport_quota_allow Quota
+```
+
+```text
+created lean/LeanPort/Quota/{Policy,Proofs,Boundary}.lean
+added binding quota.AllowQuota -> leanport_quota_allow
+
+Edit the Lean files, then: leanport check && leanport build
+```
+
+`new` does three things: it creates the four files under
+`lean/LeanPort/Quota/`, appends a `[[lean_lib]]` to `lean/lakefile.toml`, and
+appends this binding to `leanport.toml`:
+
+```toml
+[[binding]]
+  package = "quota"
+  module = "Quota"
+  export = "leanport_quota_allow"
+  go_name = "AllowQuota"
+  args = ["bool", "uint8"]
+  result = "bool"
+  runtime = "auto"
+```
+
+The scaffold is already total, so you can build it before replacing it with
+your own rule. The Lean policy is:
+
+```lean
+namespace LeanPort.Quota
+
+def decide (enabled : Bool) (code : UInt8) : Bool :=
+  enabled && code != 0
+
+end LeanPort.Quota
+```
+
+and the boundary is:
+
+```lean
+import LeanPort.Quota.Policy
+
+namespace LeanPort.Quota
+
+@[export leanport_quota_allow]
+def AllowQuotaForC (enabled : UInt8) (code : UInt8) : UInt8 :=
+  if decide (enabled == 1) code then 1 else 0
+
+end LeanPort.Quota
+```
+
+Now prove and rebuild:
+
+```bash
+leanport check
+leanport build
+```
+
+```text
+→ lake build LeanPort.Authz.Policy LeanPort.Authz.Proofs LeanPort.Authz.Boundary LeanPort.Quota.Policy LeanPort.Quota.Proofs LeanPort.Quota.Boundary
+Build completed successfully (7 jobs).
+✓ checked 2 module(s); 2 export(s) verified
+...
+→ internal/verified/quota/native/linux_amd64/libQuota.a (none mode, 36.1 KB)
+→ go build ./...
+✓ build complete
+```
+
+`build` regenerates every package, including `internal/verified/authz/`; the
+new package is `internal/verified/quota/`. Use it from a small Go program:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"example.com/permctl/internal/verified/authz"
+	"example.com/permctl/internal/verified/quota"
+)
+
+func main() {
+	fmt.Println(authz.Authorize(true, false, true, authz.Update))
+	fmt.Println(quota.AllowQuota(true, 7))
+	fmt.Println(quota.AllowQuota(false, 7))
+}
+```
+
+```bash
+mkdir -p cmd/quotademo
+cat > cmd/quotademo/main.go <<'EOF'
+package main
+
+import (
+	"fmt"
+
+	"example.com/permctl/internal/verified/authz"
+	"example.com/permctl/internal/verified/quota"
+)
+
+func main() {
+	fmt.Println(authz.Authorize(true, false, true, authz.Update))
+	fmt.Println(quota.AllowQuota(true, 7))
+	fmt.Println(quota.AllowQuota(false, 7))
+}
+EOF
+go run ./cmd/quotademo
+```
+
+```text
+true
+true
+false
+```
+
+The first line is the existing `authz` package (an owner may update). The next
+two are the new `quota` package: enabled with code 7 allows, disabled denies.
+
+**This is the rule to remember:** after adding or changing Lean, run
+`leanport check && leanport build`; then `go build` or `go run` as usual. There
+is no watcher. `go build` never reads `lean/`, so changing Lean alone does not
+change the Go API or the archive. `leanport new` is also the supported way to
+add a module — if you wire one by hand, you must update both `lakefile.toml` and
+`leanport.toml`.
+
+`String` and `ByteArray` modules use runtime-linked archives. Keep those
+exports in one package: each runtime-linked package embeds the Lean runtime, and
+multiple runtime-linked packages are not supported in v0.1.1.
 
 ## What was proved, and what was not
 

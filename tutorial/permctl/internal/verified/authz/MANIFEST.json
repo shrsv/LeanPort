@@ -25,7 +25,7 @@
   "artifacts": [
     {
       "path": "internal/verified/authz/native/linux_amd64/libAuthz.a",
-      "sha256": "d799afee15465e97b8a184403c106de2a19f36ee1ef288d919b2617401131585"
+      "sha256": "e04fc07e823b03adba3bf3aa82170ecfa096451e646f92314c028d2d830effeb"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # CLI reference
 
-This document describes `leanport` v0.1.0 and the `leanport.toml` schema it
+This document describes `leanport` v0.1.1 and the `leanport.toml` schema it
 reads. Everything here is exercised by [`scripts/e2e.sh`](../scripts/e2e.sh).
 
 ## Synopsis
@@ -21,7 +21,7 @@ Run `leanport help` for the command list. Command flags follow the standard Go
 | `-h, --help` | Show help. |
 | `--version` | Print version and exit. |
 
-There is no global `--verbose` in v0.1.0; external commands are echoed when they
+There is no global `--verbose` in v0.1.1; external commands are echoed when they
 matter (for example `→ lake build …`).
 
 ## Commands
@@ -68,6 +68,10 @@ and appends a `[[lean_lib]]` block to `lean/lakefile.toml` plus a `[[binding]]`
 entry to `leanport.toml`. The scaffolded binding is
 `bool, uint8 -> bool`; edit `Boundary.lean` and the binding together.
 
+Running `new` again appends another module; it does not overwrite existing
+files. After adding or changing a module, run `leanport check` and
+`leanport build` (and `leanport docs` for a refreshed `SPEC.md`).
+
 | Flag | Description |
 |---|---|
 | `--package <name>` | Generated Go package name. Defaults to the lower-cased module name. |
@@ -105,7 +109,7 @@ The full pipeline. Equivalent to `check`, then:
 
 | Flag | Default | Description |
 |---|---|---|
-| `--target <goos/goarch>` | host | Build only this target. Must match the host in v0.1.0. |
+| `--target <goos/goarch>` | host | Build only this target. Must match the host in v0.1.1. |
 | `--verify` | `true` | Run `go build ./...` after generating (`--verify=false` to skip). |
 | `--clean` | `false` | Remove `.leanport/` build intermediates first. |
 | `--runtime <auto\|none\|linked>` | `auto` | Force a boundary mode. `none` fails if the binding needs boxed types. |
@@ -178,7 +182,7 @@ parse.
 
 ### Boundary types
 
-The generator in v0.1.0 supports the following tokens:
+The generator in v0.1.1 supports the following tokens:
 
 | Token | Lean | Go | Mode | Generator |
 |---|---|---|---|---|

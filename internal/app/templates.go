@@ -109,7 +109,7 @@ jobs:
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
       - name: Install leanport
         run: |
-          go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.0
+          go install github.com/shrsv/LeanPort/cmd/leanport@v0.1.1
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - name: Proofs, bindings, Go tests
         run: |

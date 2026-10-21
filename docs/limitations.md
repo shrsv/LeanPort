@@ -50,6 +50,9 @@ Consequences worth knowing:
 
 - runtime-linked archives are large, so prefer runtime-free boundaries where the
   domain allows it (codes and scalars are usually enough for decision logic);
+- runtime-free generated packages can be linked together in one Go binary.
+  Runtime-linked packages each embed the Lean runtime, so keep
+  `String`/`ByteArray` exports in one package;
 - the generated glue has no locking. Lean's runtime is initialized lazily on the
   first call; serialize calls (one goroutine, a mutex, or a worker queue) unless
   you add your own synchronization;
@@ -61,7 +64,7 @@ Consequences worth knowing:
 ## 2. The generator covers scalars, strings and byte arrays
 
 The ABI and bridge have been validated for records, arrays/lists, `Option` and
-`Except` (see [`architecture.md`](architecture.md)), but the v0.1.0 code
+`Except` (see [`architecture.md`](architecture.md)), but the v0.1.1 code
 generator does not emit mappings for them. Using one of those tokens in
 `leanport.toml` fails the build with a type error.
 
@@ -101,7 +104,7 @@ A generated binding is a cgo package. Consumers need:
 consequence of the design goal, not an oversight: verified logic in Lean means
 native code in the binary.
 
-## 6. Cross-compilation is not automated in v0.1.0
+## 6. Cross-compilation is not automated in v0.1.1
 
 `leanport build --target` currently accepts only the host `goos/goarch`, because
 the C objects are compiled with the host compiler. Cross-building needs a target
