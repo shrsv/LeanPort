@@ -51,10 +51,12 @@ this document, and they drive the implementation:
 - `lake build` writes generated C to `.lake/build/ir/<Module/Path>.c`.
 - `@[export name]` on `def f (a b : UInt8) : UInt8` emits a C function
   `uint8_t name(uint8_t, uint8_t)` with unmangled linkage.
-- Compiling that C with the flags from `leanc --print-cflags` needs only the
-  Lean include directory; it does **not** require the Lean runtime to link.
-- A boundary written with `Bool`/`UInt8` only leaves exactly five undefined
-  symbols, all reached from the module initializer's dead code path:
+- For a scalar-only module, compiling that C with the flags from
+  `leanc --print-cflags` needs only the Lean include directory; scalar exports
+  do **not** require the Lean runtime to link.
+- A boundary written with `Bool`/`UInt8` only leaves five core undefined
+  symbols (`lean_notify_assert` may join them when an inline header assertion is
+  used), all reached from the module initializer's dead code path:
 
   ```
   initialize_Init
@@ -67,25 +69,79 @@ this document, and they drive the implementation:
 - The resulting archive links into a Go binary with plain `cgo` directives and
   runs correctly, with no Lean runtime present.
 
-## The runtime-free boundary
+And for boxed data:
 
-The boundary function is the only place where C scalars meet Lean values. The
-convention keeps it free of the Lean runtime:
+- `String`, `ByteArray`, `Array`, records and `Option` exports all compile to
+  `lean_object*` signatures and reference real runtime functions (for example
+  `lean_string_append`, `lean_mk_string`, `lean_alloc_sarray`, `mi_malloc_small`).
+- The Lean toolchain ships static `libgmp.a`, `libuv.a`, `libc++.a` and
+  `libc++abi.a`, so a fully static runtime link needs no system `-dev` packages.
+- Merging the module objects and the pulled runtime members with
+  `ld -r --start-group … --end-group` produces one relocatable object
+  (measured ≈ 30 MB), whose only remaining undefined symbols are libc/libm.
+- A Go program linking that archive through cgo builds, runs, and passes
+  `String`, record and `ByteArray` values correctly: measured binary ≈ 14 MB,
+  `ldd` shows only libc/libm/libgcc.
+- The `lean.h`-dependent glue is compiled at `leanport build` time and placed in
+  the archive, so the consumer's Go package contains only plain C prototypes and
+  the consumer never needs Lean headers.
 
-- Decode with `UInt8`/`Bool` comparisons, not `Option`.
-- Encode results as `UInt8` codes (`0` deny, `1` allow) and map them in Go.
-- Do not `deriving Repr` on types used by an exported path.
-- Make the boundary total: invalid input must return the deny code, never panic.
+## Boundary modes
 
-Using `Option`, `Nat` conversions, strings, arrays, `Repr`, or IO in a exported
-path pulls live runtime symbols into the archive. `leanport build` detects this
-by inspecting undefined symbols and fails with the offending names rather than
-producing an archive that fails to link later.
+The boundary function is the only place where C values meet Lean values.
+`leanport build` inspects the compiled object and chooses one of two modes.
 
-The five dead-path symbols above are satisfied by a generated `bridge.c` that
-provides fail-closed stubs. They are reachable only from the module initializer
-and allocation paths, which scalar exports never invoke. If an export ever
-needs them at runtime, it is out of the v0.1 boundary — by design.
+### Runtime-free mode
+
+Chosen when every export uses only scalars. The conventions keep it free of the
+runtime:
+
+- decode with `UInt8`/`Bool` comparisons, not `Option`;
+- encode results as `UInt8` codes (`0` deny, `1` allow) and map them in Go;
+- avoid `Nat` conversions, strings, arrays, `Repr` and IO on the exported path;
+- make the boundary total: invalid input returns the deny code, never panics.
+
+Five dead-path symbols (`initialize_Init`, `lean_inc_heartbeat`,
+`mi_malloc_small`, `lean_dec_ref_cold`, `lean_internal_panic_out_of_memory`) are
+satisfied by generated fail-closed stubs in `bridge.c`. They are reachable only
+from the module initializer and allocation paths, which scalar exports never
+invoke. (`lean_notify_assert` also appears when the Lean headers' inline
+`assert()` macro is used; it fires only on a violated precondition.)
+
+Archive size: approximately 4 KB. No Lean runtime in the consumer's binary.
+
+### Runtime-linked mode
+
+Chosen automatically when an export uses anything boxed — `String`,
+`ByteArray`, arrays, records, `Option`, user inductives. The boundary can be
+written naturally; LeanPort handles ownership:
+
+- the generated glue owns the conversion and calls `lean_dec` on values it
+  borrows;
+- `String` and `ByteArray` are copied in and out, so there are no shared mutable
+  buffers;
+- the runtime is initialized once per process
+  (`lean_initialize_runtime_module`, then each module initializer, then
+  `lean_io_mark_end_initialization`).
+
+LeanPort merges the module objects with the runtime members actually referenced
+and with `libc++`/GMP/libuv, all statically. Archive size: approximately 30 MB.
+The consumer needs no Lean headers and no Lean installation, and `ldd` on the
+resulting binary shows only libc/libm/libgcc.
+
+### Choosing
+
+| | runtime-free | runtime-linked |
+|---|---|---|
+| Supported types | scalars, sealed records of scalars | everything Lean can compile |
+| Archive | ~4 KB | ~30 MB |
+| Go binary delta | ~0 | ~+12 MB |
+| Consumer needs Lean | no | no |
+| Preferred for | decision logic, policies, arithmetic | text, buffers, rich results |
+
+Because decision logic rarely needs allocation, most verified modules will use
+runtime-free mode. Rich types are available when the domain needs them, at a
+size cost recorded in `MANIFEST.json`.
 
 ## Generated artifacts
 

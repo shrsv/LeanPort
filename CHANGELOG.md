@@ -23,6 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The core pipeline (Lean module + proofs → generated C → static archive →
   cgo → Go binary) has been validated locally with Lean 4.29.1 on linux/amd64.
 
+### Changed
+
+- Corrected the boundary specification after measuring the real link: strings,
+  byte arrays, arrays, records, optionals and other boxed values **are**
+  supported, via a runtime-linked archive (~30 MB) that embeds the Lean runtime,
+  libc++ and GMP statically. Scalar-only exports keep the runtime-free archive
+  (~4 KB). Consumers need no Lean installation or Lean headers in either mode.
+- Added the annotated project layout to the root README, showing `lean/` (yours),
+  `internal/verified/` (generated) and `cmd/` (application).
+
 ## [0.1.0] - Unreleased
 
 ### Added

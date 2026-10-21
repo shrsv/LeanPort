@@ -3,31 +3,62 @@
 LeanPort is useful within a deliberate, narrow boundary. Knowing the edges is
 part of using it honestly.
 
-## 1. The exported boundary is scalar-only (v0.1)
+## 1. Two boundary modes, chosen automatically
 
-Exported functions may take and return:
+Every export is supported. What differs is how much of the Lean runtime the
+generated archive carries.
 
-| Lean | Go | Notes |
-|---|---|---|
-| `Bool` | `bool` | Encoded as `UInt8` (`1`/`0`) |
-| `UInt8/16/32/64` | `uint8/16/32/64` | |
-| `Int8/16/32/64` | `int8/16/32/64` | |
-| code tables | typed constants | e.g. `Action` ↔ `UInt8` |
+**Runtime-free mode** (scalar-only exports). The archive contains the module's
+object plus a few fail-closed stubs for the runtime entry points that appear in
+the module initializer's dead code path. Nothing of the Lean runtime is linked.
 
-Not supported in an exported path in v0.1:
+| Lean | Go |
+|---|---|
+| `Bool` | `bool` |
+| `UInt8/16/32/64`, `Int8/16/32/64` | `uint8/16/32/64`, `int8/16/32/64` |
+| `USize` | `uint` |
+| `Float`, `Float32` | `float64`, `float32` |
+| `Char` | `rune` |
+| sealed record of the above | Go `struct` (fields flattened across the ABI) |
 
-- strings, `ByteArray`, arrays, lists;
-- `Option`, `Sum`, `Except` and other inductive returns;
-- `Nat` and `Int` (arbitrary precision);
-- `IO`, tasks, or anything that allocates.
+Measured: archive ≈ 4 KB.
 
-LeanPort rejects these at `leanport build` time by inspecting the undefined
-symbols of the compiled object. You get the offending symbol names and a
-pointer to this document, not a linker error three steps later.
+**Runtime-linked mode** (anything boxed). LeanPort merges the Lean runtime,
+`libc++`, GMP and libuv into the archive as one relocatable object; only the
+members actually referenced are pulled in.
 
-Rationale: this is what keeps the archive free of the Lean runtime, which is
-what makes `go build` boring for consumers. A wider boundary is planned
-(v0.3) with explicit ownership rules.
+| Lean | Go |
+|---|---|
+| `String` | `string` (UTF-8, copied) |
+| `ByteArray` | `[]byte` (copied both ways) |
+| `Array α`, `List α` (`α` scalar) | `[]α` |
+| `Option α` | `(α, ok bool)` |
+| `Except ε α` | `(α, error)` |
+| user inductive with scalar fields | generated enum + `struct` |
+
+Measured (Lean 4.29.1, linux/amd64): merged archive ≈ 30 MB; a hello-world Go
+binary linking it is ≈ 14 MB, and `ldd` shows only libc/libm/libgcc — no Lean
+shared library, and the consumer needs no Lean headers (the `lean.h`-dependent
+glue is compiled into the archive at `leanport build` time, and the Go side sees
+only plain C prototypes).
+
+`leanport build` picks the mode by inspecting undefined symbols: if the only
+unresolved names are the known dead-path set, it emits stubs; otherwise it
+switches to the runtime-linked merge. The choice is recorded in `MANIFEST.json`
+and can be overridden with `runtime = "none" | "linked"` in `leanport.toml`.
+
+Consequences worth knowing:
+
+- runtime-linked archives are large, so prefer runtime-free boundaries where the
+  domain allows it (codes and scalars are usually enough for decision logic);
+- the Lean runtime is a global, GC-adjacent subsystem: initialize once per
+  process, and treat calls as not goroutine-safe unless the generated glue says
+  otherwise;
+- copying semantics apply at the boundary. A `String` or `[]byte` is copied in
+  and out; there are no shared mutable buffers.
+
+Not supported in either mode: `Nat`/`Int` (arbitrary precision) and `IO` as a
+return type. Convert to fixed-width integers at the boundary.
 
 ## 2. The Lean C ABI is unstable
 

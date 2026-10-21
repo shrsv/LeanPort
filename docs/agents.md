@@ -54,16 +54,22 @@ leanport docs      # refresh SPEC.md and this file's generated block
 | Add a whole module | `leanport new <module>` | `leanport build` |
 | Application wiring | Go code outside `internal/verified/` | `go test ./...` |
 
-## Boundary constraints (do not violate)
+## Boundary constraints
 
-An exported function must be **total** and **runtime-free**:
+There are two boundary modes; `leanport build` chooses automatically.
 
-- only `Bool`, `UInt8/16/32/64`, `Int8/16/32/64` in and out;
-- no `Option`, `Nat`, strings, arrays, `Repr`, or IO in the exported path;
-- invalid input returns the deny code, never panics or allocates.
+**Runtime-free** (scalar-only): only `Bool`, `UInt8/16/32/64`, `Int8/16/32/64`,
+`USize`, `Float`/`Float32`, `Char`, and sealed records of those. No `Option`,
+`Nat`, strings, arrays, `Repr`, or IO on the exported path. Invalid input returns
+the deny code, never panics or allocates.
 
-`leanport build` enforces this. If it reports undefined runtime symbols, the fix
-is to simplify `Boundary.lean`, not to add flags.
+**Runtime-linked** (anything boxed): `String`, `ByteArray`, arrays, `Option`,
+`Except`, records and user inductives are allowed. Ownership and copying are
+handled by generated glue; do not hand-write conversions.
+
+If `leanport build` reports an unexpected runtime symbol in a module you intended
+to keep runtime-free, simplify `Boundary.lean` or set `runtime = "linked"` in the
+binding. Do not add flags to suppress the check.
 
 ## Interpreting failures
 

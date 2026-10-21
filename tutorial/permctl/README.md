@@ -81,12 +81,15 @@ Theorems proved in `Proofs.lean` include:
 
 ## Boundary implementation notes
 
-`Boundary.lean` follows the runtime-free conventions:
+`permctl` is decision logic, so its boundary is deliberately **runtime-free**:
 
 - decode `UInt8` codes with `==`, not `Option`;
 - encode the result as `UInt8` (`1` allow, `0` deny);
 - invalid action codes return `0` (fail closed);
 - no `deriving Repr`, no `Nat`, no allocation on the exported path.
 
-These are enforced by `leanport build`, which reports the exact undefined
-symbols if violated.
+That keeps the archive at a few kilobytes and adds no Lean runtime to the Go
+binary. It is a choice for this module, not a LeanPort limit: exports that use
+`String`, `ByteArray`, arrays, records or `Option` are supported through
+runtime-linked mode (see [`../../docs/limitations.md`](../../docs/limitations.md)),
+at the cost of a larger archive.

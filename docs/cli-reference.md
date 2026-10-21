@@ -76,8 +76,9 @@ The full pipeline. Equivalent to `check`, then:
 1. locate generated C under `lean/.lake/build/ir/**/*.c`;
 2. compile each translation unit with the C compiler and flags from
    `leanc --print-cflags`;
-3. inspect undefined symbols and reject anything that needs the Lean runtime,
-   printing the offending export and the symbol names;
+3. inspect undefined symbols: if only the known dead-path runtime entry points
+   remain, emit fail-closed stubs (runtime-free); otherwise merge the Lean
+   runtime, libc++, GMP and libuv into the archive (runtime-linked);
 4. emit `bridge.c` with fail-closed stubs for known dead-path runtime symbols;
 5. archive `native/<goos>_<goarch>/lib<Module>.a`;
 6. generate the Go API, `_cgo.go`, `bridge.h` and `MANIFEST.json`;
@@ -125,13 +126,24 @@ module   = "Authz"                     # Lean module under LeanPort/
 export   = "leanport_authz_authorize"  # C symbol produced by @[export]
 go_name  = "Authorize"                 # Go function name
 
-# Argument and result types map to Go through this closed table:
-#   bool        <-> Bool        (1 = true, 0 = false)
-#   uint8/16/32/64 <-> UInt8/16/32/64
-#   int8/16/32/64  <-> Int8/16/32/64
+# Argument and result types map to Go through this table:
+#   bool           <-> Bool            (runtime-free)
+#   uint8/16/32/64 <-> UInt8/16/32/64  (runtime-free)
+#   int8/16/32/64  <-> Int8/16/32/64   (runtime-free)
+#   usize          <-> USize           (runtime-free)
+#   float/float32  <-> Float/Float32   (runtime-free)
+#   rune           <-> Char            (runtime-free)
+#   string         <-> String          (runtime-linked, copied UTF-8)
+#   bytes          <-> ByteArray       (runtime-linked, copied)
 #   <name>:<Enum>  <-> UInt8 code declared in `actions`/`enums`
+#   <Name>         <-> sealed record   (fields mapped recursively)
 args     = ["bool", "bool", "bool", "action:Action"]
 result   = "bool"
+
+# Boundary mode. "auto" (default) chooses runtime-free when every export is
+# scalar-only, and runtime-linked when boxed data is involved. Force with
+# "none" or "linked".
+runtime  = "auto"
 
 # Named code tables become Go constant blocks and fail-closed decoders.
 [bindings.actions]
@@ -147,7 +159,7 @@ ViewAudit = 4
 | Code | Meaning |
 |---|---|
 | `0` | Success. |
-| `1` | Check/build failure (proof hole, missing export, link failure, runtime-boundary violation). |
+| `1` | Check/build failure (proof hole, missing export, link failure). |
 | `2` | Usage error or missing toolchain. |
 
 ### Environment

@@ -14,9 +14,13 @@ generality. The acceptance criterion for v0.1 is narrow and testable:
 - [ ] `leanport new <module>` — scaffolds policy, proofs, boundary and binding entry.
 - [ ] `leanport check` — runs Lake, rejects `sorry`/`admit`, validates that every
       declared export exists in the generated C.
-- [ ] `leanport build` — compiles generated C, enforces the runtime-free
-      boundary, archives `native/<goos>_<goarch>/lib<module>.a`, generates the
-      Go API + cgo bridge, writes `MANIFEST.json`.
+- [ ] `leanport build` — compiles generated C, selects runtime-free or
+      runtime-linked mode from the export's actual symbol needs, archives
+      `native/<goos>_<goarch>/lib<module>.a`, generates the Go API + cgo bridge,
+      writes `MANIFEST.json`.
+- [ ] Rich boundary: `String` ↔ `string`, `ByteArray` ↔ `[]byte`, arrays/lists
+      ↔ slices, `Option` ↔ `(value, ok)`, records ↔ Go structs, in
+      runtime-linked mode. Mechanism validated; generator support in progress.
 - [ ] `leanport docs` — emits `SPEC.md` per module and syncs `AGENTS.md`.
 - [ ] `leanport doctor` — reports toolchain presence, versions and target support.
 - [ ] `tutorial/permctl` — a working command-line application whose authorization
@@ -35,12 +39,13 @@ generality. The acceptance criterion for v0.1 is narrow and testable:
       suggested fixes.
 - [ ] Multi-module projects and shared Lean packages via Lake dependencies.
 
-## v0.3 — a wider boundary
+## v0.3 — ergonomics at scale
 
-- [ ] Byte-buffer (`ByteArray`) arguments and returns, with explicit ownership.
-- [ ] String returns via a length-prefixed, caller-owned buffer protocol.
-- [ ] Encoded result types (`Result`/`Except`) mapped to Go `(value, error)`.
-- [ ] Optional linking against the full Lean runtime for exports that need it.
+- [ ] Byte-buffer and string **borrowing** (zero-copy views) on top of the
+      copying boundary.
+- [ ] Streaming/iterator exports for large collections.
+- [ ] Optional dynamically-linked runtime mode for very large generated modules.
+- [ ] Cross-target artifact builds in CI, including darwin/arm64 and windows.
 
 ## Explicit non-goals
 
@@ -50,6 +55,7 @@ generality. The acceptance criterion for v0.1 is narrow and testable:
   still write the proofs.
 - Replacing Lean, Lake, or the Lean compiler.
 - Making a cgo binding buildable with `CGO_ENABLED=0`.
+- Arbitrary-precision `Nat`/`Int` or `IO` values crossing the boundary.
 
 ## Deferred with a decision recorded
 
