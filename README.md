@@ -482,6 +482,7 @@ LeanPort/
 ├── examples/
 │   └── rich-types/        String/ByteArray boundary, runtime-linked archive
 ├── docs/                  architecture, CLI reference, limitations, agent guide
+├── media/                 README images (LiveReview banner)
 ├── scripts/
 │   ├── e2e.sh             end-to-end acceptance run
 │   └── release.sh         six cross-built binaries + checksums + gh release
@@ -494,3 +495,13 @@ LeanPort/
 ## Roadmap and license
 
 See [`ROADMAP.md`](ROADMAP.md). MIT licensed — see [`LICENSE`](LICENSE).
+
+---
+
+## See More
+
+Your team's attention is limited. Spend review effort where **business risk is highest** — not spread evenly across every diff.
+
+If LeanPort is about proving the rules that ship, [**LiveReview**](https://hexmos.com/livereview) does the analogous thing for your *code changes*: instead of reviewing every diff with equal effort, it scores each change by blast radius — how far its impact reaches through your call graph — so review attention goes where it actually matters.
+
+[![LiveReview — Risk-Aware AI Code Review for Business-Critical Systems](media/livereview-banner.png)](https://hexmos.com/livereview)
