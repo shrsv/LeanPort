@@ -119,7 +119,7 @@ leanport version
 ```
 
 ```text
-leanport v0.1.1 (commit ccc6686, built 2026-10-21T12:30:16Z)
+leanport v0.1.1 (commit ccc6686, built 2026-10-21T12:31:22Z)
 ```
 
 A binary installed with `go install` or built with `go build` from source prints
