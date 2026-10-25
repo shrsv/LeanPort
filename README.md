@@ -503,6 +503,11 @@ LeanPort/
 └── .github/workflows/     verify + release automation
 ```
 
+## Resources
+
+- [Introducing LeanPort](https://journal.hexmos.com/introducing-leanport/) —
+  the announcement article: motivation, design and an end-to-end walkthrough.
+
 ## Roadmap and license
 
 See [`ROADMAP.md`](ROADMAP.md). MIT licensed — see [`LICENSE`](LICENSE).
