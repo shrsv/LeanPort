@@ -1,0 +1,28 @@
+name = "foundations"
+
+# One lean_lib is appended per module by `leanport new`.
+
+[[lean_lib]]
+name = "LeanPort.Basics"
+srcDir = "."
+globs = ["LeanPort.Basics.*"]
+
+[[lean_lib]]
+name = "LeanPort.Functional"
+srcDir = "."
+globs = ["LeanPort.Functional.*"]
+
+[[lean_lib]]
+name = "LeanPort.Division"
+srcDir = "."
+globs = ["LeanPort.Division.*"]
+
+[[lean_lib]]
+name = "LeanPort.Wallet"
+srcDir = "."
+globs = ["LeanPort.Wallet.*"]
+
+[[lean_lib]]
+name = "LeanPort.Refined"
+srcDir = "."
+globs = ["LeanPort.Refined.*"]

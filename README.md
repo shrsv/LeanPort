@@ -27,19 +27,29 @@ or the LeanPort CLI to build the application.
 
 ---
 
-## Start here: the tutorial
+## Start here: examples, in order
 
-The fastest way to understand LeanPort is to build **`permctl`**, a small
-command-line tool whose authorization policy is written and proved in Lean 4,
-compiled to native code, and called from Go through a generated binding. The
-full walkthrough starts from an empty directory, shows every file and every
-command, and explains each generated artifact:
+The fastest way to understand LeanPort is to work through six small examples.
+Each teaches one Lean idea, shows the LeanPort boundary that exposes it to Go,
+and ends with an ordinary Go call:
 
-➡️ **[Open the full tutorial](tutorial/README.md)**
+| # | What it teaches |
+|---|---|
+| 1 | [Executable Lean, called from Go](tutorial/01-executable.md) |
+| 2 | [Pure functions and recursion](tutorial/02-functions.md) |
+| 3 | [Specifications and proofs](tutorial/03-specifications.md) |
+| 4 | [A business invariant](tutorial/04-business-invariant.md) |
+| 5 | [Types that enforce invariants](tutorial/05-refined-types.md) |
+| 6 | [Capstone: a verified authorization CLI](tutorial/06-authorization.md) |
 
-If LeanPort is not installed, jump to [Install](#install) and come back. Then
-run the checked-in project. `leanport check` and `leanport build` need Lean; the
-rest need only Go and cgo:
+➡️ **[Open the example index](tutorial/README.md)** for the learning path,
+what each example teaches, and how to run them.
+
+If you only run one thing, run the capstone, **`permctl`**: a small command-line
+tool whose authorization policy is written and proved in Lean 4, compiled to
+native code, and called from Go through a generated binding. If LeanPort is not
+installed, jump to [Install](#install) and come back. `leanport check` and
+`leanport build` need Lean; the rest need only Go and cgo:
 
 ```bash
 git clone https://github.com/shrsv/LeanPort
@@ -89,10 +99,10 @@ exit=1
 
 That is the whole loop: **Lean owns the rules and proofs; `leanport build`
 produces a native archive and Go API; `go build` stays an ordinary Go build.**
-The tutorial also shows how to start from scratch, how to make a broken proof
+The examples also show how to start from scratch, how to make a broken proof
 fail CI, and how to inspect the generated package.
 
-A second, smaller example shows `String` and `ByteArray` crossing the boundary:
+A separate example shows `String` and `ByteArray` crossing the boundary:
 [`examples/rich-types/`](examples/rich-types/).
 
 ---
@@ -394,7 +404,7 @@ a small glue object with fail-closed stubs; the Lean runtime is not linked at
 all. *Runtime-linked* means Lean's runtime is merged into the archive
 statically, so the consumer still needs nothing but a C toolchain.
 
-Measured on Lean 4.29.1, linux/amd64: the runtime-free tutorial archive is about
+Measured on Lean 4.29.1, linux/amd64: the runtime-free capstone archive is about
 27 KB and its Go binary about 2.3 MB. The runtime-linked rich-types archive is
 about 29 MB and its demo binary about 14 MB. `ldd` shows only ordinary system
 libraries in both cases.
@@ -477,8 +487,9 @@ changes, and interpret proof failures without improvising the build.
 LeanPort/
 ├── cmd/leanport/          CLI entry point
 ├── internal/app/          CLI implementation
-├── tutorial/              build a sample verified application, end to end
-│   └── permctl/           verified-authorization command-line tool
+├── tutorial/              six examples, from executable Lean to a verified CLI
+│   ├── foundations/       Examples 1-5: one small shared project
+│   └── permctl/           Example 6: verified-authorization command-line tool
 ├── examples/
 │   └── rich-types/        String/ByteArray boundary, runtime-linked archive
 ├── docs/                  architecture, CLI reference, limitations, agent guide

@@ -22,7 +22,7 @@ appear in the module initializer's dead code path. No Lean runtime is linked.
 | `Char` | `rune` |
 | `UInt8` action code | generated enum type |
 
-Measured on Lean 4.29.1, linux/amd64: archive ≈ 12–28 KB; the tutorial binary is
+Measured on Lean 4.29.1, linux/amd64: archive ≈ 12–28 KB; the capstone binary is
 ≈ 2.3 MB and `ldd` shows only libc. (The range is because proofs are compiled
 into the same archive.)
 

@@ -1,0 +1,104 @@
+# LeanPort project contract. See docs/cli-reference.md.
+# Files under internal/verified/ are generated; edit lean/ instead.
+
+schema = 1
+
+[project]
+  name = "foundations"
+  lean_dir = "lean"
+  go_module = "example.com/foundations"
+  package_dir = "internal/verified"
+  targets = ["linux/amd64"]
+
+[lean]
+  toolchain = "4.29.1"
+
+[[binding]]
+  package = "learn"
+  module = "Basics"
+  export = "leanport_basics_increment"
+  go_name = "Increment"
+  args = ["uint64"]
+  result = "uint64"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Functional"
+  export = "leanport_functional_sum_to"
+  go_name = "SumTo"
+  args = ["uint64"]
+  result = "uint64"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Functional"
+  export = "leanport_functional_is_even"
+  go_name = "IsEven"
+  args = ["uint64"]
+  result = "bool"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Functional"
+  export = "leanport_functional_quadruple"
+  go_name = "Quadruple"
+  args = ["uint64"]
+  result = "uint64"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Division"
+  export = "leanport_division_safe_divide"
+  go_name = "SafeDivide"
+  args = ["uint64", "uint64"]
+  result = "uint64"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Wallet"
+  export = "leanport_wallet_allowed"
+  go_name = "Allowed"
+  args = ["uint64", "uint64", "uint64"]
+  result = "bool"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Wallet"
+  export = "leanport_wallet_balance_after"
+  go_name = "BalanceAfter"
+  args = ["uint64", "uint64", "uint64"]
+  result = "uint64"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Refined"
+  export = "leanport_refined_checked_divide"
+  go_name = "CheckedDivide"
+  args = ["uint64", "uint64"]
+  result = "uint64"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Refined"
+  export = "leanport_refined_percent"
+  go_name = "Percent"
+  args = ["uint64"]
+  result = "uint8"
+  runtime = "auto"
+
+[[binding]]
+  package = "learn"
+  module = "Refined"
+  export = "leanport_refined_slot"
+  go_name = "Slot"
+  args = ["uint64", "uint64", "uint64", "uint8"]
+  result = "uint64"
+  runtime = "auto"

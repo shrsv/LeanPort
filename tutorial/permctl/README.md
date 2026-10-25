@@ -1,6 +1,6 @@
-# `permctl` — the tutorial application
+# `permctl` — the capstone application
 
-`permctl` is the worked example for LeanPort: a small Go command-line tool
+`permctl` is the capstone example for LeanPort: a small Go command-line tool
 whose authorization policy is written and proved in Lean 4, compiled to native
 code, and called through a generated binding.
 
@@ -10,7 +10,8 @@ writing C glue or learning Lean's native linking.*
 The project is checked in complete and is exercised by
 [`../../scripts/e2e.sh`](../../scripts/e2e.sh). The full, from-scratch
 walkthrough — including every file and every terminal output — is
-[`../README.md`](../README.md).
+[`../06-authorization.md`](../06-authorization.md). The five smaller examples
+before it are listed in [`../README.md`](../README.md).
 
 ## Layout
 
@@ -119,5 +120,5 @@ Arrays, records and `Option` have validated ABI mappings but no generator yet.
 4. `permctl verify` agrees with the table for every cell and variant.
 5. `permctl decide` exits non-zero when it denies, so it composes in shell.
 6. The whole flow works from a fresh clone following
-   [`../README.md`](../README.md), on the non-Nix path, and is reproduced by
+   [`../06-authorization.md`](../06-authorization.md), on the non-Nix path, and is reproduced by
    [`../../scripts/e2e.sh`](../../scripts/e2e.sh).

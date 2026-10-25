@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "generator": "leanport dev",
+  "lean": {
+    "toolchain": "4.29.1"
+  },
+  "target": {
+    "goos": "linux",
+    "goarch": "amd64"
+  },
+  "mode": "linked",
+  "exports": [
+    {
+      "c_symbol": "leanport_basics_increment",
+      "go": "Increment",
+      "args": [
+        "uint64"
+      ],
+      "result": "uint64"
+    },
+    {
+      "c_symbol": "leanport_functional_sum_to",
+      "go": "SumTo",
+      "args": [
+        "uint64"
+      ],
+      "result": "uint64"
+    },
+    {
+      "c_symbol": "leanport_functional_is_even",
+      "go": "IsEven",
+      "args": [
+        "uint64"
+      ],
+      "result": "bool"
+    },
+    {
+      "c_symbol": "leanport_functional_quadruple",
+      "go": "Quadruple",
+      "args": [
+        "uint64"
+      ],
+      "result": "uint64"
+    },
+    {
+      "c_symbol": "leanport_division_safe_divide",
+      "go": "SafeDivide",
+      "args": [
+        "uint64",
+        "uint64"
+      ],
+      "result": "uint64"
+    },
+    {
+      "c_symbol": "leanport_wallet_allowed",
+      "go": "Allowed",
+      "args": [
+        "uint64",
+        "uint64",
+        "uint64"
+      ],
+      "result": "bool"
+    },
+    {
+      "c_symbol": "leanport_wallet_balance_after",
+      "go": "BalanceAfter",
+      "args": [
+        "uint64",
+        "uint64",
+        "uint64"
+      ],
+      "result": "uint64"
+    },
+    {
+      "c_symbol": "leanport_refined_checked_divide",
+      "go": "CheckedDivide",
+      "args": [
+        "uint64",
+        "uint64"
+      ],
+      "result": "uint64"
+    },
+    {
+      "c_symbol": "leanport_refined_percent",
+      "go": "Percent",
+      "args": [
+        "uint64"
+      ],
+      "result": "uint8"
+    },
+    {
+      "c_symbol": "leanport_refined_slot",
+      "go": "Slot",
+      "args": [
+        "uint64",
+        "uint64",
+        "uint64",
+        "uint8"
+      ],
+      "result": "uint64"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "internal/verified/learn/native/linux_amd64/libBasics.a",
+      "sha256": "fbca9e2c9831a4a6e8b985f13eec5d037a8e7304780615abd08780d7472b1bd6"
+    }
+  ]
+}

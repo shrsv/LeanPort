@@ -35,5 +35,5 @@ objects, copies results back, and releases Lean references. Consumers do not
 include `lean.h` and need no Lean toolchain.
 
 Because the archive is ~29 MB, it is **not committed**; run `leanport build`
-after cloning. `permctl`'s runtime-free archive is committed so the tutorial
-works with `go test ./...` alone.
+after cloning. `permctl`'s runtime-free archive is committed so the capstone
+example works with `go test ./...` alone.

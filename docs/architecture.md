@@ -45,8 +45,8 @@ an ordinary `go build` with no Lean toolchain installed.
 
 ### Validated behaviour (Lean 4.29.1, linux/amd64)
 
-These facts were established by building the tutorial's policy before writing
-this document, and they drive the implementation:
+These facts were established by building the capstone example's policy before
+writing this document, and they drive the implementation:
 
 - `lake build` writes generated C to `.lake/build/ir/<Module/Path>.c`.
 - `@[export name]` on `def f (a b : UInt8) : UInt8` emits a C function
@@ -112,7 +112,7 @@ only from the module initializer and allocation paths, which scalar exports
 never invoke. The stubs abort on the panic/assert paths.
 
 Archive size: approximately 12–28 KB (proofs are compiled into the archive). No
-Lean runtime in the consumer's binary; the tutorial binary is about 2.3 MB.
+Lean runtime in the consumer's binary; the capstone binary is about 2.3 MB.
 
 ### Runtime-linked mode
 

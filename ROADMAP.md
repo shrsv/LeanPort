@@ -27,6 +27,9 @@ generality. The acceptance criterion for v0.1 is narrow and testable:
       configuration.
 - [x] `tutorial/permctl` — a working command-line application whose authorization
       policy is written and proved in Lean, with a stdlib-only Go CLI.
+- [x] `tutorial/foundations` — five smaller examples that lead to `permctl`:
+      executable code, pure functions, specifications, business invariants, and
+      types that enforce invariants.
 - [x] `scripts/e2e.sh` — end-to-end acceptance run including a deliberate
       proof-hole failure and a rich-types build.
 - [x] Nix flake providing Go, gcc and helpers, with Lean pinned by

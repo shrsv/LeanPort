@@ -1,0 +1,8 @@
+# LeanPort generated / intermediate files
+.leanport/
+.lake/
+.elan/
+.direnv/
+
+# Runtime-linked archive (~29 MB); rebuild with `leanport build`.
+internal/verified/*/native/

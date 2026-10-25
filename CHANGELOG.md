@@ -5,6 +5,21 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- A six-example learning path under `tutorial/`: executable Lean, pure
+  functions, specifications and proofs, business invariants, refined types, and
+  the existing `permctl` capstone. `tutorial/README.md` is now the index.
+- `tutorial/foundations/` — a checked-in project for Examples 1–5, exercised by
+  `scripts/e2e.sh`.
+
+### Changed
+
+- The original `tutorial/README.md` walkthrough is now
+  `tutorial/06-authorization.md` (Example 6).
+
 ## [0.1.1] - 2026-10-21
 
 Multi-module linking fix.

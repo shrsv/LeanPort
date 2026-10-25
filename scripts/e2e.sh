@@ -59,7 +59,23 @@ if ldd "$WORK/permctl" | grep -qi lean; then
 fi
 printf '   archive: %s bytes, binary: %s bytes\n' "$size" "$(wc -c <"$WORK/permctl")"
 
+say "examples 1-5: foundations project"
+cd "$ROOT/tutorial/foundations"
+"$LP" check
+"$LP" build
+go test -count=1 ./...
+demo="$(go run ./cmd/learn)"
+grep -q "increment 41 = 42" <<<"$demo" || fail "Example 1 output missing"
+grep -q "sumTo 4 = 10" <<<"$demo" || fail "Example 2 output missing"
+grep -q "safeDivide 12 0 = 0" <<<"$demo" || fail "Example 3 output missing"
+grep -q "balanceAfter(100, 30, 2) = 68" <<<"$demo" || fail "Example 4 output missing"
+grep -q "percent 250 = 100" <<<"$demo" || fail "Example 5 output missing"
+foundations_archive="internal/verified/learn/native/linux_amd64/libBasics.a"
+[ "$(wc -c <"$foundations_archive")" -gt 1048576 ] || fail "foundations archive should be runtime-linked"
+printf '%s\n' "$demo" | sed 's/^/   /'
+
 say "check rejects an injected hole"
+cd "$ROOT/tutorial/permctl"
 proof="lean/LeanPort/Authz/Proofs.lean"
 cp "$proof" "$WORK/Proofs.lean.bak"
 printf '\ntheorem injected_hole : True := by\n  sorry\n' >>"$proof"
